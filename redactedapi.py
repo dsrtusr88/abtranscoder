@@ -4,8 +4,6 @@ import os
 import json
 import time
 import requests
-import mechanize
-import HTMLParser
 from io import StringIO
 import sys
 
