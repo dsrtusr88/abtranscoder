@@ -204,7 +204,7 @@ def main():
                             print("Release is actually 24-bit lossless, skipping.")
                             continue
                         if int(do_24_bit) == 1:
-                            confirmation = y#raw_input("Mark release as 24bit lossless? y/n: ")
+                            confirmation = y #raw_input("Mark release as 24bit lossless? y/n: ")
                             if confirmation != 'y':
                                 continue
                         print("Marking release as 24bit lossless.")
@@ -259,15 +259,17 @@ def main():
 
                     while os.path.exists(flac_dir) == False:
                         print (f"Path not found: {flac_dir}")
-                        alternative_file_path_exists = ""
-                        while (alternative_file_path_exists.lower() != "y") and (alternative_file_path_exists.lower() != "n"):
-                            alternative_file_path_exists = n# input("Do you wish to provide an alternative file path? (y/n): ")
+                        print (f"Skipping: {flac_dir}")
+                        break
+                        #alternative_file_path_exists = ""
+                        #while (alternative_file_path_exists.lower() != "y") and (alternative_file_path_exists.lower() != "n"):
+                            #alternative_file_path_exists = n# input("Do you wish to provide an alternative file path? (y/n): ")
 
-                        if alternative_file_path_exists.lower() == "y":
-                            flac_dir = input("Alternative file path: ")
-                        else:
-                            print (f"Skipping: {flac_dir}")
-                            break
+                        #if alternative_file_path_exists.lower() == "y":
+                            #flac_dir = input("Alternative file path: ")
+                        #else:
+                            #print (f"Skipping: {flac_dir}")
+                            #break
 
                     if (oktoprocess):
                         for bitrate in needed:
