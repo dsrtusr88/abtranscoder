@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-Installer script for orpheusbetter.
+Installer script for redactedbetter.
 '''
 
 from setuptools import setup
@@ -16,20 +16,20 @@ else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 setup(
-    name = "orpheusbetter",
-    description = "Automatically transcode and upload FLACs on orpheus.network.",
+    name = "redactedbetter",
+    description = "Automatically transcode and upload FLACs on redacted.ch.",
     version = verstr,
-    url = 'https://github.com/ApexWeed/orpheusbetter-crawler',
+    url = 'https://github.com/Mechazawa/pthbetter-crawler',
     py_modules = [
         '_version',
         'tagging',
         'transcode',
-        'whatapi'
+        'redactedapi'
     ],
-    scripts = ['orpheusbetter'],
+    scripts = ['redactedbetter'],
     install_requires = [
         'mutagen>=1.20',
-        'mechanize==0.2.5',
+        'mechanize==04.9',
         'requests>=1.0'
     ]
 )
