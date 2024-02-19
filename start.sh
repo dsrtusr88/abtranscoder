@@ -4,5 +4,5 @@
 chown -R hotio:hotio /config
 
 su -s /bin/bash hotio  <<EOF
-app/orpheusbetter
+app/redactedbetter
 EOF
