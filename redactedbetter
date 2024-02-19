@@ -92,9 +92,8 @@ def main():
         config.set('redacted', 'torrent_dir', '')
         config.set('redacted', 'formats', 'flac, v0, 320')
         config.set('redacted', 'media', ', '.join(redactedapi.lossless_media))
-        #config.set('redacted', '24bit_behaviour','0')
+        config.set('redacted', '24bit_behaviour','0')
         config.set('redacted', 'piece_length', '18')
-        #config.set('redacted', 'sonocop_app_path', '')
         config.write(open(args.config, 'w'))
         print(f'Please edit the configuration file: {args.config}')
 
@@ -107,8 +106,7 @@ def main():
             session_cookie = os.path.expanduser(config.get('redacted', 'session_cookie'))
         except configparser.NoOptionError:
             session_cookie = None
-        #do_24_bit = config.get('redacted', '24bit_behaviour')
-
+        do_24_bit = config.get('redacted', '24bit_behaviour')
         data_dir = os.path.expanduser(config.get('redacted', 'data_dir'))
         try:
             output_dir = os.path.expanduser(config.get('redacted', 'output_dir'))
@@ -195,27 +193,27 @@ def main():
             else:
                 flac_dir = os.path.join(data_dir, html.unescape(torrent['filePath']))
 
-            # if int(do_24_bit):
-            #     try:
-            #         if transcode.is_24bit(flac_dir) and torrent['encoding'] != '24bit Lossless':
-            #             # A lot of people are uploading FLACs from Bandcamp without realizing
-            #             # that they're actually 24 bit files (usually 24/44.1). Since we know for
-            #             # sure whether the files are 24 bit, we might as well correct the listing
-            #             # on the site (and get an extra upload in the process).
-            #             if args.no_24bit_edit:
-            #                 print ("Release is actually 24-bit lossless, skipping.")
-            #                 continue
-            #             if int(do_24_bit) == 1:
-            #                 confirmation = input("Mark release as 24bit lossless? y/n: ")
-            #                 if confirmation != 'y':
-            #                     continue
-            #             print ("Marking release as 24bit lossless.")
-            #           #  api.set_24bit(torrent)
-            #             group = api.request_get('torrentgroup', id=groupid)
-            #             torrent = [t for t in group['torrents'] if t['id'] == torrentid][0]
-            #     except Exception as e:
-            #         print(f"Error: can't edit 24-bit torrent - skipping: {e}")
-            #         continue
+            if int(do_24_bit):
+                try:
+                    if transcode.is_24bit(flac_dir) and torrent['encoding'] != '24bit Lossless':
+                        # A lot of people are uploading FLACs from Bandcamp without realizing
+                        # that they're actually 24 bit files (usually 24/44.1). Since we know for
+                        # sure whether the files are 24 bit, we might as well correct the listing
+                        # on the site (and get an extra upload in the process).
+                        if args.no_24bit_edit:
+                            print "Release is actually 24-bit lossless, skipping."
+                            continue
+                        if int(do_24_bit) == 1:
+                            confirmation = raw_input("Mark release as 24bit lossless? y/n: ")
+                            if confirmation != 'y':
+                                continue
+                        print "Marking release as 24bit lossless."
+                      #  api.set_24bit(torrent)
+                        group = api.request('torrentgroup', id=groupid)
+                        torrent = [t for t in group['torrents'] if t['id'] == torrentid][0]
+                except Exception as e:
+                    print "Error: can't edit 24-bit torrent - skipping: %s" % e
+                    continue
 
             oktoprocess=True
 
@@ -271,45 +269,6 @@ def main():
                             print (f"Skipping: {flac_dir}")
                             break
 
-                    if (torrent["lossyWebApproved"]): 
-                        print (f"Lossy Web Approved, skipping transcoded flac check")
-                    else:
-                        if (torrent["lossyMasterApproved"]):
-                            print (f"Lossy Master Approved, skipping transcoded flac check")
-                        else:
-                            transcode_count = 0
-                            result=None
-                            if (os.path.exists(sonocop_app_path)):
-                                print (f"Checking if flac transcoded using sonocop")
-                                # Run the command with the specified argument
-                                result = subprocess.run([sonocop_app_path, flac_dir], check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                                transcode_count = result.returncode
-                            else:
-                                try:
-                                    # Attempt to run through docker
-                                    command = ["docker", "run", "--rm", "-v", f'"{flac_dir}:/data"', "nullpointerninja7/sonocop:latest"]
-                                    print("Sonocop not configured. Try to run it's docker container instead")
-                                    print("Running command:", " ".join(command))
-                                    result = subprocess.run(command, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                                    transcode_count = result.returncode
-                                except (subprocess.CalledProcessError, FileNotFoundError):
-                                    # CalledProcessError if the command ran but failed
-                                    # FileNotFoundError if the command was not found
-                                    print (f"--Sonocop not configured in config file and docker launch failed. Cannot check transcodes, exiting.--")   
-                                    #sys.exit(99)
-                                # Access the exit code
-                            
-
-                            # Optionally, print the standard output and standard error
-                            print(result.stdout)
-                            print(result.stderr)                    
-                            if (transcode_count > 100):
-                                print (f"***Possible system error *** Processing : {flac_dir}. Exiting.")
-                                sys.exit(transcode_count)
-                            if (transcode_count > 0):
-                                print (f"***{transcode_count} transcoded flacs found *** Skipping : {flac_dir}")
-                                print (f"***Manually review spectrograms and report this as a transcode if it is")
-                                oktoprocess=False
                     if (oktoprocess):
                         for bitrate in needed:
                             if os.path.exists(flac_dir):
