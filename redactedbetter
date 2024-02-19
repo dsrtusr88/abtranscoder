@@ -94,14 +94,14 @@ def main():
         config.set('redacted', 'media', ', '.join(redactedapi.lossless_media))
         #config.set('redacted', '24bit_behaviour','0')
         config.set('redacted', 'piece_length', '18')
-        config.set('redacted', 'sonocop_app_path', '')
+        #config.set('redacted', 'sonocop_app_path', '')
         config.write(open(args.config, 'w'))
         print(f'Please edit the configuration file: {args.config}')
 
         sys.exit(2)
     finally:
         api_key = config.get('redacted', 'api_key')
-        sonocop_app_path =  config.get('redacted', 'sonocop_app_path')
+        #sonocop_app_path =  config.get('redacted', 'sonocop_app_path')
         #password = config.get('redacted', 'password')
         try:
             session_cookie = os.path.expanduser(config.get('redacted', 'session_cookie'))
@@ -296,7 +296,7 @@ def main():
                                     # CalledProcessError if the command ran but failed
                                     # FileNotFoundError if the command was not found
                                     print (f"--Sonocop not configured in config file and docker launch failed. Cannot check transcodes, exiting.--")   
-                                    sys.exit(99)
+                                    #sys.exit(99)
                                 # Access the exit code
                             
 
