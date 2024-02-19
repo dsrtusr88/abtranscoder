@@ -285,10 +285,10 @@ class RedactedAPI:
                     # desc= (str) Description for non-music torrents
                     # requestid=(int) requestID being filled
             # Prompt user for confirmation
-            if promptuser:
-                if not self.prompt_user_confirmation(summary):
-                    print("Upload canceled.")
-                    return
+            #if promptuser:
+                #if not self.prompt_user_confirmation(summary):
+                    #print("Upload canceled.")
+                    #return
         
         try:
             request_params = {
