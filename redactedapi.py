@@ -197,17 +197,17 @@ class RedactedAPI:
         print("\nSummary of the information to be uploaded:")
         print("------------------------------------------")
         print(summary)
-        while True:
-            user_input = y #input("   *** Proceed with upload? (y/n/q): ").lower()
-            if user_input == 'y':
-                return True
-            elif user_input == 'n':
-                return False
-            elif user_input == 'q':
-                print("Quitting application.")
-                sys.exit(0)
-            else:
-                print("Invalid input. Please enter 'y' for yes, 'n' for no, or 'q' to quit.")
+        #while True:
+            #user_input = y #input("   *** Proceed with upload? (y/n/q): ").lower()
+            #if user_input == 'y':
+                #return True
+            #elif user_input == 'n':
+                #return False
+            #elif user_input == 'q':
+                #print("Quitting application.")
+                #sys.exit(0)
+            #else:
+                #print("Invalid input. Please enter 'y' for yes, 'n' for no, or 'q' to quit.")
 
 
     def upload(self, group, torrent, new_torrent, bitrate, description=[], promptuser=False):
