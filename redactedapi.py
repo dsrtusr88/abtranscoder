@@ -4,6 +4,8 @@ import os
 import json
 import time
 import requests
+import mechanize
+import HTMLParser
 from io import StringIO
 import sys
 
@@ -198,7 +200,7 @@ class RedactedAPI:
         print("------------------------------------------")
         print(summary)
         while True:
-            user_input = input("   *** Proceed with upload? (y/n/q): ").lower()
+            user_input = y #input("   *** Proceed with upload? (y/n/q): ").lower()
             if user_input == 'y':
                 return True
             elif user_input == 'n':
@@ -335,14 +337,14 @@ class RedactedAPI:
             print(f"An error occurred: {err}")
             raise err
 
-    # def set_24bit(self, torrent):
-    #     url = "https://redacted.ch/torrents.php?action=edit&id=%s" % torrent['id']
-    #     response = self.session.get(url)
-    #     forms = mechanize.ParseFile(StringIO(response.text.encode('utf-8')), url)
-    #     form = forms[-3]
-    #     form.find_control('bitrate').set('1', '24bit Lossless')
-    #     _, data, headers = form.click_request_data()
-    #     return self.session.post(url, data=data, headers=dict(headers))
+    def set_24bit(self, torrent):
+        url = "https://redacted.ch/torrents.php?action=edit&id=%s" % torrent['id']
+        response = self.session.get(url)
+        forms = mechanize.ParseFile(StringIO(response.text.encode('utf-8')), url)
+        form = forms[-3]
+        form.find_control('bitrate').set('1', '24bit Lossless')
+        _, data, headers = form.click_request_data()
+        return self.session.post(url, data=data, headers=dict(headers))
 
     def release_url(self, group, torrent):
         return "https://redacted.ch/torrents.php?id=%s&torrentid=%s#torrent%s" % (group['group']['id'], torrent['id'], torrent['id'])
