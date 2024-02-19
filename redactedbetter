@@ -72,7 +72,7 @@ def main():
             default=os.path.normpath(os.path.expanduser('~/.redactedbetter/cache')))  # changed to make it cross platform compatible
     parser.add_argument('-U', '--no-upload', action='store_true', help='don\'t upload new torrents (in case you want to do it manually)')
     parser.add_argument('-Y', '--no-prompt', action='store_true', help='don\'t prompt user on every torrent')
-    #parser.add_argument('-E', '--no-24bit-edit', action='store_true', help='don\'t try to edit 24-bit torrents mistakenly labeled as 16-bit')
+    parser.add_argument('-E', '--no-24bit-edit', action='store_true', help='don\'t try to edit 24-bit torrents mistakenly labeled as 16-bit')
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
     prompt_user = True
 
