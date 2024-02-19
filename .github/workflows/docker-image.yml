@@ -34,7 +34,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ghcr.io/quorn23/orpheusbetter-docker
+          images: ghcr.io/dsrtusr88/redbetter-docker
 
       - name: Build and publish image
         id: docker_build
