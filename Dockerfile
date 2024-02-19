@@ -1,7 +1,22 @@
 FROM ghcr.io/hotio/base:alpinevpn-5b6ec6c
 
-RUN apk add --no-cache python3 py3-lxml py3-packaging git mktorrent flac lame sox && \
-    apk add --no-cache --virtual=build-dependencies py3-pip
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    git \
+    mktorrent \
+    flac \
+    lame \
+    sox \
+    ffmpeg \
+    gcc \
+    musl-dev \
+    libffi-dev \
+    openssl-dev \
+    py3-lxml \
+    py3-packaging \
+    tzdata \
+    && pip3 install --no-cache-dir --upgrade pip setuptools
 	
 COPY / "${APP_DIR}"
 
