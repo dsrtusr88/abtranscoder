@@ -1,4 +1,4 @@
-# Metadata tag support for orpheusbetter.
+# Metadata tag support for redactedbetter.
 #
 # Copyright (c) 2013 Milky Joe <milkiejoe@gmail.com>
 #
@@ -22,7 +22,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""Simple tagging for orpheusbetter.
+"""Simple tagging for redactedbetter.
 """
 
 import os.path
@@ -46,7 +46,7 @@ class TaggingException(Exception):
 
 def valid_fractional_tag(value):
     # m or m/n
-    if re.match(r"""\d+(/(\d+))?$""", value):
+    if re.match(r"""[A-Z]?\d+(/(\d+))?$""", value):
         return True
     else:
         return False
@@ -75,7 +75,7 @@ def scrub_tag(name, value):
     return scrubbed_value
 
 def check_tags(filename, check_tracknumber_format=True):
-    """Verify that the file has the required What.CD tags.
+    """Verify that the file has the required redacted.ch tags.
 
     Returns (True, None) if OK, (False, msg) if a tag is missing or
     invalid.
@@ -151,7 +151,7 @@ def copy_tags(flac_file, transcode_file):
 
     transcode_info.save()
 
-# EasyID3 extensions for orpheusbetter.
+# EasyID3 extensions for redactedbetter.
 
 for key, frameid in {
     'albumartist': 'TPE2',
