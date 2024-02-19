@@ -1,4 +1,4 @@
-FROM ghcr.io/hotio/base:alpinevpn-5b6ec6c-170-linux-arm64
+FROM ghcr.io/hotio/base:alpinevpn
 
 RUN apk add --no-cache python3 py3-lxml py3-packaging git mktorrent flac lame sox && \
     apk add --no-cache --virtual=build-dependencies py3-pip
