@@ -210,7 +210,7 @@ class RedactedAPI:
                 #print("Invalid input. Please enter 'y' for yes, 'n' for no, or 'q' to quit.")
 
 
-    def upload(self, group, torrent, new_torrent, bitrate, format, description=[], promptuser=False):
+    def upload(self, group, torrent, new_torrent, bitrate, description=[], promptuser=False):
         torrent_data = open(new_torrent, 'rb').read()
         torrentfilebasename=os.path.basename(new_torrent)
         # this makes a list of artist records.. not sure if the API supports this instead of names
@@ -236,6 +236,15 @@ class RedactedAPI:
             + [6 for _ in group['group']['musicInfo']['remixedBy']] \
             + [7 for _ in group['group']['musicInfo']['producer']] 
         isunknown = (group['group']['releaseType'] == 21) # 21 = unknown
+        
+        # Determine format based on bitrate
+        if bitrate == "V0":
+            format = "MP3"  # V0 typically refers to variable bitrate MP3
+        elif bitrate == "320":
+            format = "MP3"  # 320 CBR corresponds to MP3 at 320 kbps constant bitrate
+        else:
+            format = "FLAC"  # Default to FLAC if bitrate is not specified or unknown
+        
         #format="MP3"
         #filetype = group['group']['categoryId'] # group says categoryName=Music and categoryId=1 but supposed to be type=0?
         if (group['group']['categoryName']=='Music'):
