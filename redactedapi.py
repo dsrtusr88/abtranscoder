@@ -210,7 +210,7 @@ class RedactedAPI:
                 #print("Invalid input. Please enter 'y' for yes, 'n' for no, or 'q' to quit.")
 
 
-    def upload(self, group, torrent, new_torrent, format, description=[], promptuser=False):
+    def upload(self, group, torrent, new_torrent, bitrate, format, description=[], promptuser=False):
         torrent_data = open(new_torrent, 'rb').read()
         torrentfilebasename=os.path.basename(new_torrent)
         # this makes a list of artist records.. not sure if the API supports this instead of names
