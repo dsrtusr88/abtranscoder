@@ -244,6 +244,7 @@ class RedactedAPI:
             format = "MP3"  # 320 CBR corresponds to MP3 at 320 kbps constant bitrate
         else:
             format = "FLAC"  # Default to FLAC if bitrate is not specified or unknown
+            bitrate = "Lossless"  # Assumed for FLAC, adjust if necessary
         
         #format="MP3"
         #filetype = group['group']['categoryId'] # group says categoryName=Music and categoryId=1 but supposed to be type=0?
