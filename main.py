@@ -84,20 +84,17 @@ def resize_jpg_images(directory, max_size=2 * 1024 * 1024):
 
 def make_torrent(input_dir, config):
     torrent_dir = config.get('AB', 'torrent_dir')
-    torrent_copy_dir = config.get('AB', 'torrent_copy_dir')
     announce_url = config.get('torrent', 'announce_url')
     piece_size = config.get('torrent', 'piece_size')
 
-    torrent_file_name = f"{os.path.basename(input_dir)}.torrent"
+    torrent_file_name = os.path.basename(input_dir) + ".torrent"
     torrent_file_path = os.path.join(torrent_dir, torrent_file_name)
-    torrent_copy_path = os.path.join(torrent_copy_dir, torrent_file_name)
 
     cmd = f'mktorrent -l {piece_size} -p -a "{announce_url}" -o "{torrent_file_path}" "{input_dir}"'
     
     try:
         subprocess.run(shlex.split(cmd), check=True)
-        shutil.copy(torrent_file_path, torrent_copy_dir)
-        print(f"Torrent created and copied for directory: {input_dir}")
+        print(f"Torrent created for directory: {input_dir}")
     except subprocess.CalledProcessError as e:
         print(f"Failed to create torrent for {input_dir}: {e}")
 
@@ -107,10 +104,12 @@ def transcode(flac_file, output_dir, output_format, config):
     resize_jpg_images(os.path.dirname(flac_file))
 
     transcode_basename = re.sub(r'[\?<>\\*\|"]', '_', os.path.splitext(os.path.basename(flac_file))[0])
-    output_path = os.path.join(output_dir, os.path.relpath(os.path.dirname(flac_file), config.get('AB', 'data_dir')))
-    os.makedirs(output_path, exist_ok=True)
-    transcode_file = os.path.join(output_path, transcode_basename + encoders[output_format]['ext'])
+    transcode_file = os.path.join(output_dir, transcode_basename + encoders[output_format]['ext'])
 
+    # Ensure the output directory exists
+    os.makedirs(os.path.dirname(transcode_file), exist_ok=True)
+
+    # Constructing the transcoding command
     command = f"ffmpeg -i \"{flac_file}\" {encoders[output_format]['opts']} \"{transcode_file}\""
     result = run_pipeline([command])
     if result[-1][0] != 0:
@@ -118,17 +117,28 @@ def transcode(flac_file, output_dir, output_format, config):
 
 def process_albums(config):
     output_formats = config.get('transcode', 'output_format').split(',')
-    albums = set(os.path.dirname(flac_path) for flac_path in locate(config.get('AB', 'data_dir'), ext_matcher('.flac'), ignore_dotfiles=False))
+    albums = set(os.path.dirname(flac_path) for flac_path in locate(config.get('AB', 'data_dir'), ext_matcher('.flac')))
 
     for album_path in albums:
+        album_success = True
         for output_format in output_formats:
             album_files = list(locate(album_path, ext_matcher('.flac')))
             for flac_file in album_files:
                 try:
-                    transcode(flac_file, config.get('AB', 'output_dir'), output_format, config)
+                    output_album_dir = os.path.join(config.get('AB', 'output_dir'), os.path.relpath(album_path, config.get('AB', 'data_dir')), output_format)
+                    transcode(flac_file, output_album_dir, output_format, config)
                 except Exception as e:
                     print(f"Error during processing {flac_file}: {e}")
-            make_torrent(os.path.join(config.get('AB', 'output_dir'), os.path.relpath(album_path, config.get('AB', 'data_dir'))), config)
+                    album_success = False
+                    break  # Stop processing this album on the first error
+            if not album_success:
+                break  # Skip to the next album if there was an error
+
+        if album_success:
+            try:
+                make_torrent(output_album_dir, config)
+            except Exception as e:
+                print(f"Error creating torrent for album {album_path}: {e}")
 
 def main():
     config = configparser.ConfigParser()
