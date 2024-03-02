@@ -29,4 +29,4 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Set entry point
-ENTRYPOINT ["python", "start.py"]
+ENTRYPOINT "${APP_DIR}"/start.sh
