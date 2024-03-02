@@ -13,8 +13,8 @@ RUN apk add --no-cache \
     musl-dev \
     libffi-dev \
     openssl-dev \
-    zlib-dev \  # Added zlib-dev package
-    py3-lxml \
+    zlib-dev \
+    py3-lxml \   # Move py3-lxml to separate apk add instruction
     py3-packaging \
     tzdata \
     && pip3 install --no-cache-dir --upgrade pip setuptools
@@ -26,7 +26,6 @@ RUN pip3 install --no-cache-dir -r "${APP_DIR}"/requirements.txt \
     
 ARG VERSION
 ARG GIT_BRANCH
-
 
 RUN chmod -R u=rwX,go=rX "${APP_DIR}" && \
     echo "v${VERSION}" > "${APP_DIR}/version.txt" && \
