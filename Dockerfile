@@ -16,7 +16,7 @@ RUN apk add --no-cache \
     zlib-dev \
     py3-lxml \
     py3-packaging \   # Move py3-packaging to separate apk add instruction
-    tzdata \
+    && apk add --no-cache tzdata \   # Separate apk add instruction for tzdata
     && pip3 install --no-cache-dir --upgrade pip setuptools
 	
 COPY / "${APP_DIR}"
