@@ -1,9 +1,7 @@
 #!/bin/bash
 
 # Set permissions for /config
-chown -R nobody:nobody /config
+chmod -R 777 /config
 
 # Execute the main.py script
-su -s /bin/bash nobody <<EOF
 python main.py
-EOF
