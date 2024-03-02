@@ -13,6 +13,7 @@ RUN apk add --no-cache \
     musl-dev \
     libffi-dev \
     openssl-dev \
+    zlib-dev \  # Added zlib-dev package
     py3-lxml \
     py3-packaging \
     tzdata \
