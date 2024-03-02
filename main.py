@@ -1,21 +1,17 @@
 import os
 import subprocess
-import argparse
+import configparser
 import mutagen.flac
 import re
-import pipes
-import shlex
-import shutil
-import errno
-import configparser
 from PIL import Image
 import io
+import shlex
+import shutil
 
 # Define encoders for different output formats
 encoders = {
     '320': {'enc': 'lame', 'ext': '.mp3', 'opts': '-h -b 320 --ignore-tag-errors'},
     'V0': {'enc': 'lame', 'ext': '.mp3', 'opts': '-V 0 --vbr-new --ignore-tag-errors'},
-    'V2': {'enc': 'lame', 'ext': '.mp3', 'opts': '-V 2 --vbr-new --ignore-tag-errors'},
     'FLAC': {'enc': 'flac', 'ext': '.flac', 'opts': '--best'}
 }
 
@@ -35,21 +31,19 @@ def run_pipeline(cmds):
     stdin = None
     last_proc = None
     procs = []
-
     try:
         for cmd in cmds:
-            try:
-                proc = subprocess.Popen(shlex.split(cmd), stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                if last_proc:
-                    last_proc.stdout.close()
-                procs.append(proc)
-                stdin = proc.stdout
-                last_proc = proc
-            except Exception as e:
-                print(f"Error running command '{cmd}': {e}")
+            proc = subprocess.Popen(shlex.split(cmd), stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if last_proc:
+                last_proc.stdout.close()
+            procs.append(proc)
+            stdin = proc.stdout
+            last_proc = proc
     finally:
-        last_stderr = last_proc.communicate()[1]
-
+        if last_proc is not None:
+            last_stderr = last_proc.communicate()[1]
+        else:
+            last_stderr = b''
     results = []
     for (cmd, proc) in zip(cmds[:-1], procs[:-1]):
         proc.wait()
@@ -63,11 +57,11 @@ def locate(root, match_function, ignore_dotfiles=True):
     Locate files within the root directory based on the match function.
     """
     for path, dirs, files in os.walk(root):
-        for filename in (os.path.abspath(os.path.join(path, filename)) for filename in files if match_function(filename)):
-            if ignore_dotfiles and os.path.basename(filename).startswith('.'):
-                pass
-            else:
-                yield filename
+        for filename in files:
+            if match_function(filename):
+                if ignore_dotfiles and filename.startswith('.'):
+                    continue
+                yield os.path.join(path, filename)
 
 def ext_matcher(*extensions):
     """
@@ -75,172 +69,107 @@ def ext_matcher(*extensions):
     """
     return lambda f: os.path.splitext(f)[-1].lower() in extensions
 
-def needs_resampling(flac_dir):
+def resize_embedded_images(flac_info, max_size=2 * 1024 * 1024):
     """
-    Check if any FLAC files within flac_dir need resampling when transcoded.
+    Resize embedded images in FLAC file if they exceed a certain size.
     """
-    flacs = (mutagen.flac.FLAC(flac_file) for flac_file in locate(flac_dir, ext_matcher('.flac')))
-    return any(flac.info.bits_per_sample > 16 for flac in flacs)
+    for index, picture in enumerate(flac_info.pictures):
+        image_data = picture.data
+        if len(image_data) > max_size:
+            image = Image.open(io.BytesIO(image_data))
+            image.thumbnail((800, 600), Image.ANTIALIAS)
+            output = io.BytesIO()
+            image.save(output, format=image.format)
+            picture.data = output.getvalue()
 
-def transcode_commands(output_format, resample, needed_sample_rate, flac_file, transcode_file):
+def resize_jpg_images(directory, max_size=2 * 1024 * 1024):
     """
-    Return a list of transcode steps (one command per list element).
+    Resize .jpg images in the specified directory if they exceed a certain size.
     """
-    if resample:
-        flac_decoder = 'sox %(FLAC)s -G -b 16 -t wav - rate -v -L %(SAMPLERATE)s dither'
-    else:
-        flac_decoder = 'flac -dcs -- %(FLAC)s'
-
-    lame_encoder = 'lame -S %(OPTS)s - %(FILE)s'
-    flac_encoder = 'flac %(OPTS)s -o %(FILE)s -'
-
-    transcoding_steps = [flac_decoder]
-
-    if encoders[output_format]['enc'] == 'lame':
-        transcoding_steps.append(lame_encoder)
-    elif encoders[output_format]['enc'] == 'flac':
-        transcoding_steps.append(flac_encoder)
-
-    transcode_args = {
-        'FLAC' : pipes.quote(flac_file),
-        'FILE' : pipes.quote(transcode_file),
-        'OPTS' : encoders[output_format]['opts'],
-        'SAMPLERATE' : needed_sample_rate,
-    }
-
-    if output_format == 'FLAC' and resample:
-        commands = ['sox %(FLAC)s -G -b 16 %(FILE)s rate -v -L %(SAMPLERATE)s dither' % transcode_args]
-    else:
-        commands = list(map(lambda cmd: cmd % transcode_args, transcoding_steps))
-    return commands
-
-def transcode(flac_file, output_dir, output_format, config):
-    """
-    Transcode a FLAC file into another format.
-    """
-    # Gather metadata from the flac file
-    flac_info = mutagen.flac.FLAC(flac_file)
-    sample_rate = flac_info.info.sample_rate
-    bits_per_sample = flac_info.info.bits_per_sample
-    resample = sample_rate > 48000 or bits_per_sample > 16
-
-    # If resampling isn't needed then needed_sample_rate will not be used.
-    needed_sample_rate = None
-
-    if resample:
-        if sample_rate % 44100 == 0:
-            needed_sample_rate = '44100'
-        elif sample_rate % 48000 == 0:
-            needed_sample_rate = '48000'
-        else:
-            raise UnknownSampleRateException('FLAC file "{0}" has a sample rate {1}, which is not 88.2 , 176.4 or 96kHz but needs resampling, this is unsupported'.format(flac_file, sample_rate))
-
-    if flac_info.info.channels > 2:
-        raise TranscodeDownmixException('FLAC file "%s" has more than 2 channels, unsupported' % flac_file)
-
-    # Determine the new filename
-    transcode_basename = os.path.splitext(os.path.basename(flac_file))[0]
-    transcode_basename = re.sub(r'[\?<>\\*\|"]', '_', transcode_basename)
-    transcode_file = os.path.join(output_dir, transcode_basename)
-    transcode_file += encoders[output_format]['ext']
-
-    if not os.path.exists(os.path.dirname(transcode_file)):
+    jpg_files = locate(directory, ext_matcher('.jpg', '.jpeg'))
+    for jpg_file in jpg_files:
         try:
-            os.makedirs(os.path.dirname(transcode_file))
-        except OSError as e:
-            if e.errno == errno.EEXIST:
-                # Harmless race condition -- another transcode process
-                # beat us here.
-                pass
-            else:
-                raise e
-
-    commands = transcode_commands(output_format, resample, needed_sample_rate, flac_file, transcode_file)
-    results = run_pipeline(commands)
-
-    # Check for problems
-    for (cmd, (code, stderr)) in zip(commands, results):
-        if code:
-            raise TranscodeException('Error running command "%s" (return code %d):\n%s' % (cmd, code, stderr.decode('utf-8')))
-
-    # Resize embedded images
-    for embedded in flac_info.pictures:
-        image_data = embedded.data
-        image = Image.open(io.BytesIO(image_data))
-
-        # Check image size
-        max_size = 2 * 1024 * 1024  # 2 MiB
-        if len(image_data) > max_size:
-            image.thumbnail((800, 600), Image.ANTIALIAS)
-            resized_image_data = io.BytesIO()
-            image.save(resized_image_data, format=image.format)
-            embedded.data = resized_image_data.getvalue()
-
-    # Resize cover image if needed
-    cover_image = flac_info.pictures[0] if flac_info.pictures else None
-    if cover_image:
-        image_data = cover_image.data
-        image = Image.open(io.BytesIO(image_data))
-
-        # Check image size
-        max_size = 2 * 1024 * 1024  # 2 MiB
-        if len(image_data) > max_size:
-            image.thumbnail((800, 600), Image.ANTIALIAS)
-            resized_image_data = io.BytesIO()
-            image.save(resized_image_data, format=image.format)
-            cover_image.data = resized_image_data.getvalue()
-
-    return transcode_file
+            with Image.open(jpg_file) as img:
+                if os.path.getsize(jpg_file) > max_size:
+                    img.thumbnail((800, 600), Image.ANTIALIAS)
+                    img.save(jpg_file, "JPEG")
+                    print(f"Resized {jpg_file} to fit within {max_size} bytes")
+        except IOError as e:
+            print(f"Error resizing image {jpg_file}: {e}")
 
 def make_torrent(input_file, config):
     """
-    Create a torrent file for the input file using specifications from the config file.
+    Create a torrent file for the input file using specifications from the config file
+    and copy it to the torrent_copy_dir.
     """
-    # Load parameters from the config file
     torrent_dir = config.get('AB', 'torrent_dir')
+    torrent_copy_dir = config.get('AB', 'torrent_copy_dir')
     announce_url = config.get('torrent', 'announce_url')
-    enable_dht = config.getboolean('torrent', 'enable_dht')
-    enable_pex = config.getboolean('torrent', 'enable_pex')
-    enable_lsd = config.getboolean('torrent', 'enable_lsd')
-    private = config.getboolean('torrent', 'private')
-    piece_size = config.getint('torrent', 'piece_size')
-    source = config.get('torrent', 'source')
+    piece_size = config.get('torrent', 'piece_size')
 
-    # Construct the mktorrent command
-    cmd = 'mktorrent -l {piece_size} -p -a {announce_url} -o "{torrent_dir}/{input_file}.torrent" "{input_file}"'.format(
-        piece_size=piece_size,
-        announce_url=announce_url,
-        torrent_dir=torrent_dir,
-        input_file=input_file
-    )
+    if not os.path.exists(torrent_dir):
+        os.makedirs(torrent_dir, exist_ok=True)
+    if not os.path.exists(torrent_copy_dir):
+        os.makedirs(torrent_copy_dir, exist_ok=True)
+    
+    torrent_file_name = os.path.basename(input_file) + ".torrent"
+    torrent_file_path = os.path.join(torrent_dir, torrent_file_name)
+    torrent_copy_path = os.path.join(torrent_copy_dir, torrent_file_name)
 
-    # Run the mktorrent command
-    subprocess.run(shlex.split(cmd))
+    cmd = f'mktorrent -l {piece_size} -p -a "{announce_url}" -o "{torrent_file_path}" "{input_file}"'
+    
+    try:
+        subprocess.run(shlex.split(cmd), check=True)
+        print(f"Torrent file created for {input_file} at {torrent_file_path}")
+        shutil.copy(torrent_file_path, torrent_copy_path)
+        print(f"Copied {torrent_file_name} to {torrent_copy_dir}")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to create torrent for {input_file}: {e}")
+
+def transcode(flac_file, output_dir, output_format, config):
+    """
+    Transcode a FLAC file into another format, resize images, and create a torrent.
+    """
+    flac_info = mutagen.flac.FLAC(flac_file)
+    resize_embedded_images(flac_info)
+    resize_jpg_images(os.path.dirname(flac_file))
+
+    transcode_basename = re.sub(r'[\?<>\\*\|"]', '_', os.path.splitext(os.path.basename(flac_file))[0])
+    transcode_file = os.path.join(output_dir, transcode_basename + encoders[output_format]['ext'])
+
+    if not os.path.exists(os.path.dirname(transcode_file)):
+        os.makedirs(os.path.dirname(transcode_file), exist_ok=True)
+
+    # Constructing the transcoding command
+    command = [
+        f"ffmpeg -i {shlex.quote(flac_file)}"  # Source file
+    ]
+
+    # Apply additional commands based on output format and whether resampling is needed
+    if output_format != 'FLAC' or (flac_info.info.sample_rate > 48000 or flac_info.info.bits_per_sample > 16):
+        command.append(encoders[output_format]['opts'])
+
+    command.append(shlex.quote(transcode_file))  # Output file
+
+    # Execute the transcoding process
+    result = run_pipeline([' '.join(command)])
+    if result[-1][0] != 0:  # Check the last command's return code
+        raise TranscodeException(f"Transcoding failed for {flac_file}")
+
+    make_torrent(transcode_file, config)
 
 def main():
     config = configparser.ConfigParser()
-    print(open('config.ini').read())  # Print the contents of config.ini
     config.read('config.ini')
-    print(config.sections())  # Print the sections available in the configparser object
+    output_formats = config.get('transcode', 'output_format').split(',')
 
-    # Load transcode parameters from the config file
-    output_format = config.get('transcode', 'output_format')
-    max_threads = config.getint('transcode', 'max_threads')
-
-    # Other parts of your main function...
-    flac_files = locate(config.get('AB', 'data_dir'), ext_matcher('.flac'))
-    for flac_file in flac_files:
-        try:
-            transcode_file = transcode(flac_file, config.get('AB', 'output_dir'), output_format, config)
-            print(f"Transcoded {flac_file} to {transcode_file}")
-
-            # Call make_torrent function
-            make_torrent(transcode_file, config)
-            print(f"Torrent created for {transcode_file}")
-        except TranscodeException as e:
-            print(f"Error transcoding {flac_file}: {e}")
-        except Exception as e:
-            print(f"Unexpected error transcoding {flac_file}: {e}")
+    for output_format in output_formats:
+        flac_files = list(locate(config.get('AB', 'data_dir'), ext_matcher('.flac')))
+        for flac_file in flac_files:
+            try:
+                transcode(flac_file, config.get('AB', 'output_dir'), output_format, config)
+            except Exception as e:
+                print(f"Error during processing {flac_file}: {e}")
 
 if __name__ == "__main__":
     main()
