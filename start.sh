@@ -1,8 +1,9 @@
 #!/bin/bash
 
-#set permission for /config
-chown -R hotio:hotio /config
+# Set permissions for /config
+chown -R nobody:nobody /config
 
-su -s /bin/bash hotio  <<EOF
-app/abtranscoder
+# Execute the main.py script
+su -s /bin/bash nobody <<EOF
+python app/main.py
 EOF
