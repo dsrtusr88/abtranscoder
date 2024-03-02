@@ -15,14 +15,15 @@ RUN apk add --no-cache \
     openssl-dev \
     zlib-dev \
     py3-lxml \
-    py3-packaging \   # Move py3-packaging to separate apk add instruction
-    && apk add --no-cache tzdata \   # Separate apk add instruction for tzdata
-    && pip3 install --no-cache-dir --upgrade pip setuptools
+    py3-packaging   # Move py3-packaging to separate apk add instruction
+
+RUN apk add --no-cache tzdata && \
+    pip3 install --no-cache-dir --upgrade pip setuptools
 	
 COPY / "${APP_DIR}"
 
-RUN pip3 install --no-cache-dir -r "${APP_DIR}"/requirements.txt \
-    && pip3 install --no-cache-dir Pillow
+RUN pip3 install --no-cache-dir -r "${APP_DIR}"/requirements.txt && \
+    pip3 install --no-cache-dir Pillow
     
 ARG VERSION
 ARG GIT_BRANCH
