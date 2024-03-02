@@ -5,5 +5,5 @@ chown -R nobody:nobody /config
 
 # Execute the main.py script
 su -s /bin/bash nobody <<EOF
-python /app/main.py
+python main.py
 EOF
