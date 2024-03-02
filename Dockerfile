@@ -14,8 +14,8 @@ RUN apk add --no-cache \
     libffi-dev \
     openssl-dev \
     zlib-dev \
-    py3-lxml \   # Move py3-lxml to separate apk add instruction
-    py3-packaging \
+    py3-lxml \
+    py3-packaging \   # Move py3-packaging to separate apk add instruction
     tzdata \
     && pip3 install --no-cache-dir --upgrade pip setuptools
 	
