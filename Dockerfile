@@ -1,46 +1,32 @@
-FROM ghcr.io/hotio/base:alpinevpn-5b6ec6c
-
-RUN apk update && apk upgrade
+FROM python:3.9-slim
 
 # Install system packages
-RUN apk add --no-cache \
-    python3 \
-    py3-pip \
+RUN apt-get update && apt-get install -y \
     git \
     mktorrent \
     flac \
     lame \
     sox \
     ffmpeg \
-    gcc \
-    musl-dev \
+    build-essential \
+    python3-dev \
+    libjpeg-dev \
+    zlib1g-dev \
     libffi-dev \
-    openssl-dev \
-    zlib-dev \
-    py3-lxml \
-    && apk add --no-cache py3-packaging # Separate apk add instruction for py3-packaging
+    libssl-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install tzdata
-RUN apk add --no-cache tzdata && \
-    apk add --no-cache jpeg-dev # Install libjpeg-dev equivalent package in Alpine
+# Install Pillow dependencies
+RUN pip install --no-cache-dir Pillow
 
-RUN apk add --no-cache build-base python3-dev jpeg-dev zlib-dev
-RUN pip install --no-cache-dir --no-binary :all: --no-build-isolation Pillow
+# Set the working directory in the container
+WORKDIR /app
 
 # Copy application files
-COPY / "${APP_DIR}"
+COPY . /app
 
 # Install Python dependencies
-RUN pip3 install --no-cache-dir -r "${APP_DIR}"/requirements.txt && \
-    pip3 install --no-cache-dir Pillow
-
-# Set arguments and permissions
-ARG VERSION
-ARG GIT_BRANCH
-RUN chmod -R u=rwX,go=rX "${APP_DIR}" && \
-    echo "v${VERSION}" > "${APP_DIR}/version.txt" && \
-    echo "${GIT_BRANCH}" > "${APP_DIR}/branch.txt" && \
-    chmod +x "${APP_DIR}"/start.sh
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Set entry point
-ENTRYPOINT "${APP_DIR}"/start.sh
+ENTRYPOINT ["python", "start.py"]
