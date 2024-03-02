@@ -16,17 +16,25 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Pillow dependencies
-RUN pip install --no-cache-dir Pillow
-
 # Set the working directory in the container
-APP_DIR /app
+WORKDIR /app
 
 # Copy application files
 COPY . /app
 
+# Install Pillow dependencies
+RUN pip install --no-cache-dir Pillow
+
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Set arguments and permissions
+ARG VERSION
+ARG GIT_BRANCH
+RUN chmod -R u=rwX,go=rX /app && \
+    echo "v${VERSION}" > /app/version.txt && \
+    echo "${GIT_BRANCH}" > /app/branch.txt && \
+    chmod +x /app/start.sh
+
 # Set entry point
-ENTRYPOINT "${APP_DIR}"/start.sh
+ENTRYPOINT ["/app/start.sh"]
