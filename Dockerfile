@@ -1,5 +1,7 @@
 FROM ghcr.io/hotio/base:alpinevpn-5b6ec6c
 
+RUN apk update && apk upgrade
+
 # Install system packages
 RUN apk add --no-cache \
     python3 \
@@ -21,6 +23,9 @@ RUN apk add --no-cache \
 # Install tzdata
 RUN apk add --no-cache tzdata && \
     apk add --no-cache jpeg-dev # Install libjpeg-dev equivalent package in Alpine
+
+RUN apk add --no-cache build-base python3-dev jpeg-dev zlib-dev
+RUN pip install --no-cache-dir --no-binary :all: --no-build-isolation Pillow
 
 # Copy application files
 COPY / "${APP_DIR}"
