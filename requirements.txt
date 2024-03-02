@@ -3,3 +3,5 @@ Requests==2.31.0
 setuptools==58.1.0
 Pillow==8.4.0
 wheel
+ffmpeg
+mktorrent
