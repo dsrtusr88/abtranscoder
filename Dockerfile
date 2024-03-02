@@ -20,7 +20,8 @@ RUN apk add --no-cache \
 	
 COPY / "${APP_DIR}"
 
-RUN pip3 install --no-cache-dir -r "${APP_DIR}"/requirements.txt
+RUN pip3 install --no-cache-dir -r "${APP_DIR}"/requirements.txt \
+    && pip3 install --no-cache-dir Pillow
     
 ARG VERSION
 ARG GIT_BRANCH
