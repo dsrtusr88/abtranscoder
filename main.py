@@ -219,7 +219,9 @@ def make_torrent(input_file, config):
 
 def main():
     config = configparser.ConfigParser()
+    print(open('config.ini').read())  # Print the contents of config.ini
     config.read('config.ini')
+    print(config.sections())  # Print the sections available in the configparser object
 
     # Load transcode parameters from the config file
     output_format = config.get('transcode', 'output_format')
