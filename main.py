@@ -7,6 +7,10 @@ from PIL import Image
 import io
 import shlex
 import shutil
+import logging
+
+logging.basicConfig(filename='/app/main.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s:%(message)s')
+logging.info("Starting main.py...")
 
 # Configuration for different output formats
 encoders = {
