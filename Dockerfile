@@ -1,42 +1,20 @@
 FROM python:3.9-slim
 
-# Install system packages
-RUN apt-get update && apt-get install -y \
-    git \
-    mktorrent \
-    flac \
-    lame \
-    sox \
-    ffmpeg \
-    build-essential \
-    python3-dev \
-    libjpeg-dev \
-    zlib1g-dev \
-    libffi-dev \
-    libssl-dev \
+# Install necessary packages
+RUN apt-get update && apt-get install -y git mktorrent flac lame sox ffmpeg \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory in the container
+# Prepare application directory
 WORKDIR /app
 
-# Copy application files
-COPY . /app
-
-# Install Pillow dependencies
-RUN pip install --no-cache-dir Pillow
-
 # Install Python dependencies
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Set arguments and permissions
-ARG VERSION
-ARG GIT_BRANCH
-RUN chmod -R u=rwX,go=rX /app && \
-    echo "v${VERSION}" > /app/version.txt && \
-    echo "${GIT_BRANCH}" > /app/branch.txt && \
-    chmod +x /app/start.sh
+# Copy the application files
+COPY . /app
 
-# Set entry point
-#ENTRYPOINT ["/app/start.sh"]
-# Directly start the Python script for debugging
-CMD ["python3", "/app/main.py"]
+# Ensure start script is executable
+RUN chmod +x /app/start.sh
+
+CMD ["/app/start.sh"]
