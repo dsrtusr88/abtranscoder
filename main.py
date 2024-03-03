@@ -106,12 +106,20 @@ def process_album(album_path, config):
 def main():
     config = configparser.ConfigParser()
     config.read('config.ini')
-    album_dir = config.get('Paths', 'data_dir')
 
-    for root, dirs, _ in os.walk(album_dir):
-        for dir in dirs:
-            album_path = os.path.join(root, dir)
-            process_album(album_path, config)  # Process each album found
+    # Accessing the config using the actual section names and keys from your provided config.ini
+    data_dir = config.get('AB', 'data_dir')
+    output_dir = config.get('AB', 'output_dir')
+    torrent_dir = config.get('AB', 'torrent_dir')
+    torrent_copy_dir = config.get('AB', 'torrent_copy_dir')
+
+    announce_url = config.get('torrent', 'announce_url')
+    piece_size = config.get('torrent', 'piece_size')
+
+    output_formats = config.get('transcode', 'output_format').split(',')
+    max_threads = config.getint('transcode', 'max_threads')
+
+    # Proceed with the rest of your script using these variables as needed
 
 if __name__ == "__main__":
     main()
