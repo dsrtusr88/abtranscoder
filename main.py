@@ -57,16 +57,22 @@ def transcode_album(album_path, config):
                 if file.lower().endswith('.flac'):
                     flac_path = os.path.join(root, file)
                     output_path = os.path.join(output_album_path, file.replace('.flac', settings['ext']))
-                    if settings['enc'] == 'flac':
-                        command = f"sox {shlex.quote(flac_path)} -G {settings['opts']} {shlex.quote(output_path)}"
-                    else: # LAME for V0
-                        command = f"lame {settings['opts']} {shlex.quote(flac_path)} {shlex.quote(output_path)}"
-                    run_command(command)
-                    logging.info(f"Transcoded {flac_path} to {output_path}")
+                    try:
+                        if settings['enc'] == 'flac':
+                            # Example: sox input.flac -r 44100 output.flac
+                            command = f"sox {shlex.quote(flac_path)} {shlex.quote(output_path)} rate -v -L 44100"  # Adjust rate as needed
+                        else:  # LAME for V0
+                            lame_opts = settings['opts']
+                            command = f"ffmpeg -i {shlex.quote(flac_path)} -vn {lame_opts} {shlex.quote(output_path)}"
+                        run_command(command)
+                        logging.info(f"Transcoded {flac_path} to {output_path}")
+                    except TranscodeException as e:
+                        logging.error(f"Failed to transcode {flac_path}: {e}")
+                        # Consider continuing with next file or handling the error as needed
                 elif file.lower().endswith(('.jpg', '.jpeg', '.png')):
                     resize_image(os.path.join(root, file))
-    # Create torrent for the album
-    make_torrent(output_album_path, config)
+        # Create torrent for the album
+        make_torrent(output_album_path, config)
 
 def make_torrent(album_path, config):
     """
