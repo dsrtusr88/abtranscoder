@@ -1,12 +1,7 @@
 #!/bin/bash
 
-echo "Starting application..."
+# Set permissions for /config
+chmod -R 777 /config
 
-# Displaying current directory and its content for debugging
-echo "Current working directory: $(pwd)"
-ls -lah
-
-# Running the Python script
-python /app/main.py
-
-echo "Application has stopped."
+# Execute the main.py script
+python main.py
