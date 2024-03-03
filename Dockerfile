@@ -37,4 +37,6 @@ RUN chmod -R u=rwX,go=rX /app && \
     chmod +x /app/start.sh
 
 # Set entry point
-ENTRYPOINT ["/app/start.sh"]
+#ENTRYPOINT ["/app/start.sh"]
+# Directly start the Python script for debugging
+CMD ["python3", "/app/main.py"]
