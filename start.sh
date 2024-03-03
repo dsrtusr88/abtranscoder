@@ -1,12 +1,12 @@
 #!/bin/bash
-echo "Starting script..."
 
-# Display current directory and its contents for debugging
-pwd
-ls -l
+echo "Starting application..."
 
-# Run the Python script and capture its output
-echo "Running Python script..."
-python3 main.py || echo "Python script failed with exit code $?"
+# Displaying current directory and its content for debugging
+echo "Current working directory: $(pwd)"
+ls -lah
 
-echo "Script finished."
+# Running the Python script
+python /app/main.py
+
+echo "Application has stopped."
