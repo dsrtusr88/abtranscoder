@@ -1,10 +1,7 @@
 #!/bin/bash
 
-# Set the umask to allow group write permissions
-umask 0002
+# Ensure script exits on failure
+set -e
 
-# Set the permissions of the script to 777
-chmod 777 start.sh
-
-# Execute the main.py script
-python main.py
+# Execute the Python script and log errors
+python3 main.py 2>&1 | tee /app/log.txt
