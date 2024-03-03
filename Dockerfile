@@ -17,4 +17,5 @@ COPY . /app
 # Ensure start script is executable
 RUN chmod +x /app/start.sh
 
-CMD ["/app/start.sh"]
+CMD ["python", "/app/main.py"]
+
