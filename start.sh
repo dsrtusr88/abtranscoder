@@ -1,7 +1,12 @@
 #!/bin/bash
+echo "Starting script..."
 
-# Ensure script exits on failure
-set -e
+# Display current directory and its contents for debugging
+pwd
+ls -l
 
-# Execute the Python script and log errors
-python3 main.py 2>&1 | tee /app/log.txt
+# Run the Python script and capture its output
+echo "Running Python script..."
+python3 main.py || echo "Python script failed with exit code $?"
+
+echo "Script finished."
